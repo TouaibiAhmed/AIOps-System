@@ -42,6 +42,19 @@ services:
     networks:
       - aiops-net
 
+  toy-app:
+    build: ./toy-app
+    container_name: toy-app
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+    ports:
+      - "8000:8000"
+    networks:
+      - aiops-net    
+
 networks:
   aiops-net:
     driver: bridge

@@ -1,25 +1,35 @@
 from fastapi import FastAPI
-import threading
+from prometheus_fastapi_instrumentator import Instrumentator
+
 import time
+import multiprocessing
+
+
 
 app = FastAPI()
 
+Instrumentator().instrument(app).expose(app)
+
 # Variable globale pour simuler une fuite mémoire
 memory_leak_list = []
+
+def burn(duration):
+    end_time = time.time() + duration
+    while time.time() < end_time:
+        _ = 999999 ** 2
 
 @app.get("/")
 def health():
     return {"status": "ok"}
 
+
+
 @app.get("/stress-cpu")
-def stress_cpu(duration: int = 20):
-    """Sature un coeur CPU pendant `duration` secondes."""
-    def burn():
-        end_time = time.time() + duration
-        while time.time() < end_time:
-            _ = 999999 ** 2   # calcul inutile mais coûteux en CPU
-    threading.Thread(target=burn).start()
-    return {"action": "cpu_stress_started", "duration": duration}
+def stress_cpu(duration: int = 20, cores: int = 1):
+    for _ in range(cores):
+        p = multiprocessing.Process(target=burn, args=(duration,))
+        p.start()
+    return {"action": "cpu_stress_started", "duration": duration, "cores": cores}
 
 @app.get("/leak-memory")
 def leak_memory(size_mb: int = 100):
@@ -35,10 +45,9 @@ def reset_memory():
     return {"action": "memory_reset"}
 
 @app.get("/network-spike")
-def network_spike():
-    """Simule un pic réseau (ici juste un placeholder, à enrichir si besoin)."""
+def network_spike(requests_count: int = 500):
     import requests
-    for _ in range(50):
+    for _ in range(requests_count):
         try:
             requests.get("https://pypi.org", timeout=1)
         except Exception:
