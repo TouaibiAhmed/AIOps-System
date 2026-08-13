@@ -7,7 +7,7 @@ PROMETHEUS_URL = "http://localhost:9090"
 QUERIES_CONTAINER = {
     "cpu_usage": 'sum(rate(container_cpu_usage_seconds_total{name="toy-app"}[30s])) * 100',
     "memory_usage": 'container_memory_usage_bytes{name="toy-app"} / (512*1024*1024) * 100',
-    "network_receive": 'rate(container_network_receive_bytes_total{name="toy-app"}[1m])',
+    "network_receive": 'rate(container_network_receive_bytes_total{name="toy-app"}[30s])',
 }
 
 
@@ -36,7 +36,7 @@ def to_dataframe(result, column_name):
     return df
 
 
-def extract(hours_back=0.05):
+def extract(hours_back=2):
     end = datetime.now(timezone.utc)
     start = end - timedelta(hours=hours_back)
 
@@ -63,4 +63,4 @@ def extract(hours_back=0.05):
 
 
 if __name__ == "__main__":
-    extract(hours_back=0.15)
+    extract(hours_back=5)
